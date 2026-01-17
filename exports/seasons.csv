@@ -1,0 +1,11 @@
+﻿_id,actual_yield,area,created_at,crop,farmer_name,fertilizer,harvest_date,notes,province,sow_date,user,yield_calculated_at,yield_source
+03znkfjkwpDMqplcM5mT,44.27,10.0,2026-01-17T09:30:27.328565,Lúa,Chiến,"NPK, Phân chuồng",2026-01-15,Lúa,BacNinh,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:30:36.910258,manual
+7aIct0znGd2JJGKy35lb,46.2,10.0,2026-01-15T10:02:06.119270,Lúa,Minh,Phân hữu cơ,2026-01-15,Lúa tốt chất lượng,BacNinh,2026-01-14,minhadcarry@gmail.com,2026-01-15T10:05:07.253425,auto_overview
+90hveSBMo6lWkOG5Zdp1,40.32,10.0,2026-01-17T09:28:02.991465,Ngô,Khoa,Phân hữu cơ.NPK,2026-01-18,Ngô,HaNoi,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:43:22.593734,manual
+9YVOHcotFHcphLc0tDiB,38.64,10.0,2026-01-17T09:42:35.037745,Ngô,Hiếu,"NPK, Phân chuồng",2026-01-15,Ngô,HaNoi,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:42:44.584633,manual
+FA7lY6yQUr6IZxZAMGOL,46.2,10.0,2026-01-17T09:42:10.861082,Lúa,Chiến,Phân hữu cơ,2026-01-15,Lúa,BacNinh,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:42:49.112377,manual
+Iw404NK54IyEY9HckSJ4,18.48,10.0,2026-01-17T09:41:41.247180,Cà Phê,Khoa,Phân hữu cơ,2026-01-15,Cà phê,BacGiang,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:42:52.746600,manual
+NVXpgy8TYVKbDiGYlU2P,504.0,10.0,2026-01-17T09:40:31.103519,Mía,Minh,Phân hữu cơ,2026-01-15,Mía,BacNinh,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:43:14.668104,manual
+TGKynCUUkAKbxj7WvHyN,20.12,10.0,2026-01-17T09:39:50.252398,Hoa Hướng Dương,Hiếu,"NPK, Phân chuồng",2026-01-15,Hoa hướng dương,BacNinh,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:43:18.201281,manual
+b6Log12apvcGfgEV5nDn,17.71,10.0,2026-01-17T09:27:05.072591,Cà Phê,Thắng,"NPK, Phân chuồng",2026-01-17,Cà phê,HaNoi,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:43:31.639162,manual
+cu4ieLvi5p8gGNHI4DYB,38.64,10.0,2026-01-17T09:41:12.126035,Ngô,Thắng,"NPK, Phân chuồng",2026-01-15,Ngô,HaNoi,2026-01-01,minhadcarry@gmail.com,2026-01-17T09:43:09.993369,manual
