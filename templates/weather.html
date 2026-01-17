@@ -42,3 +42,66 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const res = await fetch("/api/weather_chart_home");
+    const data = await res.json();
+
+    if (!data || data.error) return;
+
+    const ctx = document.getElementById("weatherChart").getContext("2d");
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: data.years,
+            datasets: [
+                {
+                    label: "🌡️ Nhiệt độ trung bình (°C)",
+                    data: data.temp,
+                    borderColor: "rgb(255, 99, 132)",
+                    fill: false,
+                    tension: 0.2
+                },
+                {
+                    label: "🌧️ Lượng mưa (mm)",
+                    data: data.rain,
+                    borderColor: "rgb(54, 162, 235)",
+                    fill: false,
+                    tension: 0.2
+                },
+                {
+                    label: "💧 Độ ẩm (%)",
+                    data: data.humidity,
+                    borderColor: "rgb(75, 192, 192)",
+                    fill: false,
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: { display: true, text: "Năm" }
+                },
+                y: {
+                    title: { display: true, text: "Giá trị" }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+                tooltip: {
+                    mode: "index",
+                    intersect: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
