@@ -28,3 +28,8 @@ Sau khi n8n khởi động, nhấn phím `o` để mở giao diện web (thườ
 1.  Nhấn nút **Execute Workflow** (hình nút Play) ở phía dưới màn hình.
 2.  Quan sát các node chạy lần lượt (hiện màu xanh lá).
 3.  Sau khi hoàn tất, kiểm tra file `data/n8n_weather_update.csv` trong thư mục dự án. Bạn sẽ thấy dữ liệu thời tiết mới đã được cập nhật.
+## 4. Tích hợp nâng cao (Tùy chọn)
+
+*   **Kết nối Firebase:** Bạn có thể thay thế node "Save to CSV" bằng node **Google Firestore** để ghi trực tiếp dữ liệu vào cơ sở dữ liệu của ứng dụng.
+*   **Thông báo:** Thêm node **Telegram** hoặc **Email** để nhận thông báo khi cập nhật hoàn tất.
+*   **Webhook:** Bạn có thể thay "Schedule Trigger" bằng "Webhook" để kích hoạt cập nhật từ nút bấm trên giao diện Admin của website.
