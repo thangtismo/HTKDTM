@@ -440,6 +440,8 @@ def index():
             total = len(df)
             recent = df.sort_values("created_at", ascending=False).head(5).to_dict(orient="records")
     return render_template("index.html", total=total, recent=recent)
+
+# ---------- OVERVIEW (OPTIMIZED) ----------
 @app.route("/overview")
 @login_required
 def overview():
@@ -619,3 +621,217 @@ def overview():
     # ... (phần xử lý thời tiết giữ nguyên)
     
     return render_template("overview.html", stats=stats)
+# ---------- AUTHENTICATION ----------
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
+        fullname = request.form.get("fullname", "").strip()
+
+        if config.USE_FIREBASE and db is not None:
+            from firebase_admin import auth
+            try:
+                user = auth.create_user(email=username, password=password, display_name=fullname)
+                flash("Đăng ký thành công. Vui lòng đăng nhập.", "success")
+                return redirect(url_for("login"))
+            except Exception as e:
+                flash("Lỗi đăng ký Firebase: " + str(e), "danger")
+                return redirect(url_for("register"))
+        else:
+            if os.path.exists(USERS_CSV):
+                df = pd.read_csv(USERS_CSV)
+                if username in df['username'].values:
+                    flash("Tên đăng nhập đã tồn tại.", "danger")
+                    return redirect(url_for("register"))
+            else:
+                df = pd.DataFrame(columns=["username", "password", "fullname", "role", "created_at"])
+
+            new = pd.DataFrame([{
+                "username": username,
+                "password": password,
+                "fullname": fullname,
+                "role": "user",
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            }])
+
+            df = pd.concat([df, new], ignore_index=True)
+            df.to_csv(USERS_CSV, index=False, encoding="utf-8-sig")
+            flash("Đăng ký thành công (CSV). Vui lòng đăng nhập.", "success")
+            return redirect(url_for("login"))
+    return render_template("register.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username").strip()
+        password = request.form.get("password").strip()
+
+        if config.USE_FIREBASE and db is not None:
+            api_key = config.FIREBASE_API_KEY
+            if not api_key:
+                flash("Firebase API key chưa được cấu hình.", "danger")
+                return redirect(url_for("login"))
+
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+            payload = {"email": username, "password": password, "returnSecureToken": True}
+
+            try:
+                r = requests.post(url, json=payload, timeout=10)
+                res_json = r.json()
+                if r.status_code == 200:
+                    session['user'] = username
+                    session['idToken'] = res_json.get("idToken")
+                    flash("Đăng nhập thành công (Firebase).", "success")
+                    return redirect(url_for("index"))
+                else:
+                    err = res_json.get("error", {}).get("message", "Đăng nhập thất bại.")
+                    flash(f"Đăng nhập thất bại (Firebase): {err}", "danger")
+                    return redirect(url_for("login"))
+            except Exception as e:
+                flash("Không thể kết nối tới Firebase.", "danger")
+                return redirect(url_for("login"))
+        else:
+            if not os.path.exists(USERS_CSV):
+                flash("Chưa có người dùng nào. Vui lòng đăng ký.", "warning")
+                return redirect(url_for("register"))
+            df = pd.read_csv(USERS_CSV)
+            user = df[(df['username'] == username) & (df['password'] == password)]
+            if not user.empty:
+                session['user'] = username
+                flash(f"Chào mừng {username}", "success")
+                return redirect(url_for("index"))
+            else:
+                flash("Sai tài khoản hoặc mật khẩu (CSV).", "danger")
+                return redirect(url_for("login"))
+
+    return render_template("login.html")
+
+@app.route("/logout")
+@login_required
+def logout():
+    session.pop('user', None)
+    session.pop('idToken', None)
+    flash("Đã đăng xuất.", "info")
+    return redirect(url_for("login"))
+
+# ---------- MANAGE SEASONS (OPTIMIZED) ----------
+@app.route("/manage", methods=["GET", "POST"])
+@login_required
+def manage():
+    try:
+        prov_file = os.path.join(os.path.dirname(__file__), "data", "vietnam_provinces_latlon.csv")
+        provinces = []
+        if os.path.exists(prov_file):
+            try:
+                df_prov = pd.read_csv(prov_file)
+                provinces = list(df_prov['Province']) if 'Province' in df_prov.columns else []
+            except:
+                provinces = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "An Giang"]
+
+        # ✅ Xử lý thêm mùa vụ
+        if request.method == "POST":
+            data = {
+                "farmer_name": request.form.get("farmer_name"),
+                "province": request.form.get("province"),
+                "crop": request.form.get("crop"),
+                "area": float(request.form.get("area") or 0),
+                "sow_date": request.form.get("sow_date"),
+                "harvest_date": request.form.get("harvest_date"),
+                "fertilizer": request.form.get("fertilizer"),
+                "notes": request.form.get("notes"),
+                "created_at": datetime.utcnow().isoformat(),
+                "user": session.get("user")
+            }
+
+            try:
+                if config.USE_FIREBASE and db is not None:
+                    db.collection("seasons").add(data)
+                    flash("✅ Đã thêm mùa vụ mới vào Firestore.", "success")
+                else:
+                    if os.path.exists(SEASONS_CSV):
+                        df_old = pd.read_csv(SEASONS_CSV)
+                        df = pd.concat([df_old, pd.DataFrame([data])], ignore_index=True)
+                    else:
+                        df = pd.DataFrame([data])
+                    df.to_csv(SEASONS_CSV, index=False, encoding="utf-8-sig")
+                    flash("✅ Đã lưu mùa vụ vào CSV (chế độ offline).", "success")
+            except Exception as e:
+                flash(f"❌ Lỗi khi lưu mùa vụ: {e}", "danger")
+
+            return redirect(url_for("manage"))
+
+        # ✅ Hiển thị danh sách mùa vụ - TỐI ƯU HÓA
+        seasons = []
+        
+        if config.USE_FIREBASE and db is not None:
+            try:
+                # GIỚI HẠN CHẶT CHẼ - chỉ lấy 50 bản ghi mới nhất
+                docs = db.collection("seasons")\
+                        .order_by("created_at", direction=firestore.Query.DESCENDING)\
+                        .limit(50)\
+                        .stream()
+                
+                count = 0
+                for d in docs:
+                    if count >= 50:  # Double check
+                        break
+                    record = d.to_dict()
+                    record["id"] = d.id
+                    
+                    # Xử lý dữ liệu an toàn
+                    try:
+                        if record.get("actual_yield"):
+                            record["actual_yield"] = float(record["actual_yield"])
+                        else:
+                            record["actual_yield"] = 0.0
+                    except:
+                        record["actual_yield"] = 0.0
+                        
+                    try:
+                        if record.get("area"):
+                            record["area"] = float(record["area"])
+                        else:
+                            record["area"] = 0.0
+                    except:
+                        record["area"] = 0.0
+                    
+                    seasons.append(record)
+                    count += 1
+                    
+                print(f"✅ Đã tải {len(seasons)} mùa vụ từ Firebase")
+                
+            except Exception as e:
+                print(f"❌ Lỗi đọc Firestore: {e}")
+                flash(f"Lỗi kết nối database: {str(e)[:100]}...", "danger")
+                # Fallback to CSV
+                if os.path.exists(SEASONS_CSV):
+                    try:
+                        df = pd.read_csv(SEASONS_CSV)
+                        if 'actual_yield' in df.columns:
+                            df['actual_yield'] = pd.to_numeric(df['actual_yield'], errors='coerce').fillna(0)
+                        if 'area' in df.columns:
+                            df['area'] = pd.to_numeric(df['area'], errors='coerce').fillna(0)
+                        seasons = df.tail(50).to_dict(orient="records")  # Chỉ lấy 50 bản ghi
+                    except Exception as csv_error:
+                        print(f"❌ Lỗi đọc CSV: {csv_error}")
+        else:
+            # Chế độ CSV
+            if os.path.exists(SEASONS_CSV):
+                try:
+                    df = pd.read_csv(SEASONS_CSV)
+                    if 'actual_yield' in df.columns:
+                        df['actual_yield'] = pd.to_numeric(df['actual_yield'], errors='coerce').fillna(0)
+                    if 'area' in df.columns:
+                        df['area'] = pd.to_numeric(df['area'], errors='coerce').fillna(0)
+                    seasons = df.tail(50).to_dict(orient="records")  # Chỉ lấy 50 bản ghi
+                except Exception as e:
+                    print(f"❌ Lỗi đọc file CSV: {e}")
+                    seasons = []
+
+        return render_template("manage.html", provinces=provinces, seasons=seasons)
+        
+    except Exception as e:
+        print(f"❌ Lỗi nghiêm trọng trong route /manage: {e}")
+        flash("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "danger")
+        return render_template("manage.html", provinces=[], seasons=[])
