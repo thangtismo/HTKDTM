@@ -45,4 +45,19 @@ def predict():
                 except requests.exceptions.Timeout:
                     flash("Kết nối timeout. Vui lòng thử lại.", "danger")
                 except Exception as e:
-                    flash("Lỗi kết nối đến dịch vụ thời tiết.", "danger"
+                    flash("Lỗi kết nối đến dịch vụ thời tiết.", "danger")
+
+        # Xử lý dự đoán năng suất
+        elif 'temp' in request.form:
+            temp = float(request.form.get("temp"))
+            rain = float(request.form.get("rain"))
+            humid = float(request.form.get("humid"))
+            if model is None:
+                flash("Model chưa load.", "danger")
+            else:
+                import numpy as np
+                X = np.array([[temp, rain, humid]])
+                pred = model.predict(X)[0]
+                result = round(float(pred), 2)
+                
+    return render_template("predict.html", weather=weather_data, forecast=forecast_data, result=result)
