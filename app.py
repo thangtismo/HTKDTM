@@ -1018,3 +1018,7 @@ def edit_season(id):
             except ValueError:
                 flash("ID mùa vụ không hợp lệ.", "danger")
                 return redirect(url_for("manage"))
+
+    except Exception as e:
+        flash(f"❌ Lỗi khi chỉnh sửa mùa vụ: {e}", "danger")
+        return redirect(url_for("manage"))
