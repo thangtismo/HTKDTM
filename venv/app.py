@@ -68,6 +68,24 @@ def edit_season(id):
         flash(f"❌ Lỗi khi chỉnh sửa mùa vụ: {e}", "danger")
         return redirect(url_for("manage"))
     
+# ---------- DELETE SEASON ----------
+@app.route("/manage/delete/<id>")
+@login_required
+def delete_season(id):
+    if config.USE_FIREBASE and db is not None:
+        try:
+            db.collection("seasons").document(id).delete()
+            flash("Đã xóa mùa vụ.", "info")
+        except Exception as e:
+            flash("Lỗi khi xóa mùa vụ: " + str(e), "danger")
+    else:
+        if os.path.exists(SEASONS_CSV):
+            df = pd.read_csv(SEASONS_CSV)
+            df = df.drop(int(id))
+            df.to_csv(SEASONS_CSV, index=False, encoding="utf-8-sig")
+            flash("Đã xóa mùa vụ (CSV).", "info")
+    return redirect(url_for("manage"))
+    
 # ---------- WEATHER ----------
 @app.route("/weather")
 @login_required
