@@ -32,3 +32,27 @@ FIREBASE_API_KEY = "AIzaSyA5osaLKa3YA4sjojAUaK2FmF_TkYVr8aU"
 # Collection trong Firestore
 FIREBASE_COLLECTION_USERS = "users"
 FIREBASE_COLLECTION_DATA = "weather_yield"
+
+# ----------------------------
+# DỮ LIỆU LOCAL
+# ----------------------------
+BASE_DIR = os.getcwd()
+
+# Thư mục chứa dữ liệu (NASA, FAO, CSV người dùng)
+DATA_PATH = os.path.join(BASE_DIR, "data", "nasa_data")
+
+# File CSV dùng cho fallback (nếu không dùng Firebase)
+USERS_CSV = os.path.join(BASE_DIR, "data", "users.csv")
+SEASONS_CSV = os.path.join(BASE_DIR, "data", "seasons.csv")
+
+# File thời tiết (NASA)
+WEATHER_CSV = os.path.join(BASE_DIR, "data", "nasa_data", "weather_all_vn_annual.csv")
+
+# File mô hình dự báo năng suất (train_predict_yield.py sinh ra)
+MODEL_PATH = os.path.join(BASE_DIR, "data", "yield_model.pkl")
+
+# ----------------------------
+# KHÁC
+# ----------------------------
+# Tùy chọn port (nếu muốn đổi khi deploy)
+PORT = int(os.environ.get("PORT", 5000))
