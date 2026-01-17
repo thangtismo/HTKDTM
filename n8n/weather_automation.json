@@ -1,0 +1,142 @@
+{
+  "name": "AgroSmart Weather Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "trigger-schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "command": "cat ../data/vietnam_provinces_latlon.csv"
+      },
+      "id": "read-csv",
+      "name": "Read Province CSV",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const lines = $input.all()[0].json.stdout.split('\\n');\nconst provinces = [];\n// Skip header\nfor (let i = 1; i < lines.length; i++) {\n  const line = lines[i].trim();\n  if (line) {\n    const parts = line.split(',');\n    provinces.push({\n      json: {\n        Province: parts[0],\n        Latitude: parts[1],\n        Longitude: parts[2]\n      }\n    });\n  }\n}\nreturn provinces;"
+      },
+      "id": "parse-csv",
+      "name": "Parse CSV",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "url": "https://power.larc.nasa.gov/api/temporal/daily/point",
+        "authentication": "none",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": "T2M,PRECTOTCORR,RH2M",
+          "community": "AG",
+          "longitude": "={{$json.Longitude}}",
+          "latitude": "={{$json.Latitude}}",
+          "start": "20230101",
+          "end": "20231231",
+          "format": "JSON"
+        },
+        "options": {}
+      },
+      "id": "nasa-api",
+      "name": "Fetch NASA Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [850, 300],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.all()[0].json;\nconst params = data.properties.parameter;\nconst province = $('Parse CSV').item.json.Province;\n\n// Calculate Annual Averages using strict JS\nlet t2m_sum = 0, count = 0, rain_sum = 0, rh_sum = 0;\n\n// Check if T2M exists\nif (params && params.T2M) {\n  for (const key in params.T2M) {\n    if (params.T2M[key] > -900) {\n      t2m_sum += params.T2M[key];\n      rain_sum += (params.PRECTOTCORR && params.PRECTOTCORR[key]) ? params.PRECTOTCORR[key] : 0;\n      rh_sum += (params.RH2M && params.RH2M[key]) ? params.RH2M[key] : 0;\n      count++;\n    }\n  }\n}\n\nreturn {\n  json: {\n    Province: province,\n    Year: 2023,\n    TempAvg: count ? (t2m_sum / count).toFixed(2) : 0,\n    RainfallAnnual: rain_sum.toFixed(2),\n    HumidityAvg: count ? (rh_sum / count).toFixed(2) : 0\n  }\n};"
+      },
+      "id": "calculate-avg",
+      "name": "Calculate Annual Stats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [1050, 300],
+      "credentials": {}
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "fileName": "../data/n8n_weather_update.csv",
+        "options": {
+          "headerRow": true
+        }
+      },
+      "id": "save-csv",
+      "name": "Save to CSV",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "credentials": {}
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Province CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Province CSV": {
+      "main": [
+        [
+          {
+            "node": "Parse CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse CSV": {
+      "main": [
+        [
+          {
+            "node": "Fetch NASA Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch NASA Data": {
+      "main": [
+        [
+          {
+            "node": "Calculate Annual Stats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Annual Stats": {
+      "main": [
+        [
+          {
+            "node": "Save to CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
