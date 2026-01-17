@@ -954,3 +954,4 @@ def manage():
         print(f"❌ Lỗi nghiêm trọng trong route /manage: {e}")
         flash("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "danger")
         return render_template("manage.html", provinces=[], seasons=[])
+    
