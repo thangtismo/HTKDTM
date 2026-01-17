@@ -1022,3 +1022,7 @@ def edit_season(id):
     except Exception as e:
         flash(f"❌ Lỗi khi chỉnh sửa mùa vụ: {e}", "danger")
         return redirect(url_for("manage"))
+    
+    # ---------- DELETE SEASON ----------
+@app.route("/manage/delete/<id>")
+@login_required
