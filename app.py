@@ -835,3 +835,122 @@ def manage():
         print(f"❌ Lỗi nghiêm trọng trong route /manage: {e}")
         flash("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "danger")
         return render_template("manage.html", provinces=[], seasons=[])
+@app.route("/manage", methods=["GET", "POST"])
+@login_required
+def manage():
+    try:
+        prov_file = os.path.join(os.path.dirname(__file__), "data", "vietnam_provinces_latlon.csv")
+        provinces = []
+        if os.path.exists(prov_file):
+            try:
+                df_prov = pd.read_csv(prov_file)
+                provinces = list(df_prov['Province']) if 'Province' in df_prov.columns else []
+            except:
+                provinces = ["Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Cần Thơ", "An Giang"]
+
+        # ✅ Xử lý thêm mùa vụ
+        if request.method == "POST":
+            data = {
+                "farmer_name": request.form.get("farmer_name"),
+                "province": request.form.get("province"),
+                "crop": request.form.get("crop"),
+                "area": float(request.form.get("area") or 0),
+                "sow_date": request.form.get("sow_date"),
+                "harvest_date": request.form.get("harvest_date"),
+                "fertilizer": request.form.get("fertilizer"),
+                "notes": request.form.get("notes"),
+                "created_at": datetime.utcnow().isoformat(),
+                "user": session.get("user")
+            }
+
+            try:
+                if config.USE_FIREBASE and db is not None:
+                    db.collection("seasons").add(data)
+                    flash("✅ Đã thêm mùa vụ mới vào Firestore.", "success")
+                else:
+                    if os.path.exists(SEASONS_CSV):
+                        df_old = pd.read_csv(SEASONS_CSV)
+                        df = pd.concat([df_old, pd.DataFrame([data])], ignore_index=True)
+                    else:
+                        df = pd.DataFrame([data])
+                    df.to_csv(SEASONS_CSV, index=False, encoding="utf-8-sig")
+                    flash("✅ Đã lưu mùa vụ vào CSV (chế độ offline).", "success")
+            except Exception as e:
+                flash(f"❌ Lỗi khi lưu mùa vụ: {e}", "danger")
+
+            return redirect(url_for("manage"))
+
+        # ✅ Hiển thị danh sách mùa vụ - TỐI ƯU HÓA
+        seasons = []
+        
+        if config.USE_FIREBASE and db is not None:
+            try:
+                # GIỚI HẠN CHẶT CHẼ - chỉ lấy 50 bản ghi mới nhất
+                docs = db.collection("seasons")\
+                        .order_by("created_at", direction=firestore.Query.DESCENDING)\
+                        .limit(50)\
+                        .stream()
+                
+                count = 0
+                for d in docs:
+                    if count >= 50:  # Double check
+                        break
+                    record = d.to_dict()
+                    record["id"] = d.id
+                    
+                    # Xử lý dữ liệu an toàn
+                    try:
+                        if record.get("actual_yield"):
+                            record["actual_yield"] = float(record["actual_yield"])
+                        else:
+                            record["actual_yield"] = 0.0
+                    except:
+                        record["actual_yield"] = 0.0
+                        
+                    try:
+                        if record.get("area"):
+                            record["area"] = float(record["area"])
+                        else:
+                            record["area"] = 0.0
+                    except:
+                        record["area"] = 0.0
+                    
+                    seasons.append(record)
+                    count += 1
+                    
+                print(f"✅ Đã tải {len(seasons)} mùa vụ từ Firebase")
+                
+            except Exception as e:
+                print(f"❌ Lỗi đọc Firestore: {e}")
+                flash(f"Lỗi kết nối database: {str(e)[:100]}...", "danger")
+                # Fallback to CSV
+                if os.path.exists(SEASONS_CSV):
+                    try:
+                        df = pd.read_csv(SEASONS_CSV)
+                        if 'actual_yield' in df.columns:
+                            df['actual_yield'] = pd.to_numeric(df['actual_yield'], errors='coerce').fillna(0)
+                        if 'area' in df.columns:
+                            df['area'] = pd.to_numeric(df['area'], errors='coerce').fillna(0)
+                        seasons = df.tail(50).to_dict(orient="records")  # Chỉ lấy 50 bản ghi
+                    except Exception as csv_error:
+                        print(f"❌ Lỗi đọc CSV: {csv_error}")
+        else:
+            # Chế độ CSV
+            if os.path.exists(SEASONS_CSV):
+                try:
+                    df = pd.read_csv(SEASONS_CSV)
+                    if 'actual_yield' in df.columns:
+                        df['actual_yield'] = pd.to_numeric(df['actual_yield'], errors='coerce').fillna(0)
+                    if 'area' in df.columns:
+                        df['area'] = pd.to_numeric(df['area'], errors='coerce').fillna(0)
+                    seasons = df.tail(50).to_dict(orient="records")  # Chỉ lấy 50 bản ghi
+                except Exception as e:
+                    print(f"❌ Lỗi đọc file CSV: {e}")
+                    seasons = []
+
+        return render_template("manage.html", provinces=provinces, seasons=seasons)
+        
+    except Exception as e:
+        print(f"❌ Lỗi nghiêm trọng trong route /manage: {e}")
+        flash("Đã xảy ra lỗi hệ thống. Vui lòng thử lại.", "danger")
+        return render_template("manage.html", provinces=[], seasons=[])
