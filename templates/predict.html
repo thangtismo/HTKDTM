@@ -141,3 +141,34 @@
     color: #1b5e20;
   }
 </style>
+
+<div class="weather-container">
+  <div class="weather-header">
+    <h2>🌤️ Dự báo thời tiết</h2>
+    <div class="search-bar">
+      <input type="text" id="cityInput" placeholder="Nhập tên thành phố...">
+      <button onclick="getWeather()">Tìm kiếm</button>
+    </div>
+  </div>
+
+  <div id="weatherDisplay">
+    <div class="weather-info">
+      <div class="weather-card">
+        <h3>Nhiệt độ hiện tại</h3>
+        <div class="temp" id="temperature">-- °C</div>
+        <p id="description">--</p>
+      </div>
+
+      <div class="weather-card">
+        <h3>Thông tin chi tiết</h3>
+        <p>Độ ẩm: <span id="humidity">--%</span></p>
+        <p>Tốc độ gió: <span id="wind">-- km/h</span></p>
+      </div>
+    </div>
+
+    <div class="forecast">
+      <h3>📅 Dự báo 5 ngày tới</h3>
+      <div class="forecast-grid" id="forecastList"></div>
+    </div>
+  </div>
+</div>
