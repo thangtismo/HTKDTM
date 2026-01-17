@@ -263,3 +263,133 @@
     </div>
 </div>
 {% endif %}
+
+<!-- Thông báo về tính năng mới -->
+<div class="mt-6 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-2xl p-6 shadow-sm">
+    <div class="flex flex-col md:flex-row items-start md:items-center gap-6">
+        <div class="flex-shrink-0">
+            <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-green-500 rounded-full flex items-center justify-center shadow-lg">
+                <span class="text-2xl text-white">🚀</span>
+            </div>
+        </div>
+        <div class="flex-1">
+            <h3 class="text-xl font-bold text-blue-800 mb-3">Tính năng mới: Hỗ trợ quyết định thông minh</h3>
+            <div class="text-sm text-blue-700 space-y-3">
+                <p class="font-medium">Hệ thống AI sẽ tự động tính toán và đưa ra khuyến nghị dựa trên phân tích đa yếu tố:</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div class="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <span class="text-green-600 text-sm">🌾</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Loại cây trồng</div>
+                            <div class="text-xs text-gray-600">Năng suất chuẩn theo giống</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-blue-600 text-sm">📅</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Thời gian sinh trưởng</div>
+                            <div class="text-xs text-gray-600">Tối ưu hóa theo mùa vụ</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 p-2 bg-white rounded-lg border border-blue-100">
+                        <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                            <span class="text-yellow-600 text-sm">💧</span>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-gray-800">Phân bón</div>
+                            <div class="text-xs text-gray-600">Hiệu quả sử dụng dinh dưỡng</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-4 bg-white rounded-lg border border-green-200">
+                    <div class="flex items-center gap-3">
+                        <span class="text-green-600 text-lg">💡</span>
+                        <div>
+                            <p class="font-semibold text-green-700">Hướng dẫn sử dụng:</p>
+                            <p class="text-sm text-gray-700">Nhấn nút <span class="bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">📊 Năng suất</span> để hệ thống tự động tính toán và đưa ra khuyến nghị chi tiết cho mùa vụ của bạn!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom animations */
+    .group:hover .group-hover\:scale-105 {
+        transform: scale(1.05);
+    }
+    
+    .transform {
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .shadow-lg {
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    
+    .hover\:shadow-xl:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .flash-message {
+        transition: all 0.5s ease;
+    }
+</style>
+
+<script>
+    // Thêm hiệu ứng tương tác
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hiệu ứng hover cho các nút
+        const buttons = document.querySelectorAll('a, button');
+        buttons.forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+        
+        // Auto-hide flash messages after 8 seconds (tăng thời gian lên 8s)
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(message => {
+            setTimeout(() => {
+                message.style.opacity = '0';
+                message.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (message.parentElement) {
+                        message.parentElement.remove();
+                    }
+                }, 500);
+            }, 8000); // 8 giây
+        });
+        
+        // Close button functionality
+        const closeButtons = document.querySelectorAll('.close-flash');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const message = this.closest('.flash-message');
+                if (message) {
+                    message.style.opacity = '0';
+                    message.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (message.parentElement) {
+                            message.parentElement.remove();
+                        }
+                    }, 500);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
