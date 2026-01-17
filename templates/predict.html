@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Dự báo thời tiết | AgroSmart{% endblock %}
+
+{% block content %}
+<style>
+  /* ================== WEATHER PAGE STYLE ================== */
+  body {
+    background-color: #f5f7fa;
+  }
+
+  .weather-container {
+    max-width: 950px;
+    margin: 50px auto;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    font-family: "Inter", sans-serif;
+  }
+
+  .weather-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+
+  .weather-header h2 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2e7d32;
+    margin: 0;
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search-bar input {
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    width: 220px;
+    font-size: 15px;
+    transition: all 0.3s;
+  }
+
+  .search-bar input:focus {
+    outline: none;
+    border-color: #2e7d32;
+    box-shadow: 0 0 5px rgba(46, 125, 50, 0.4);
+  }
+
+  .search-bar button {
+    background-color: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .search-bar button:hover {
+    background-color: #1b5e20;
+  }
+
+  .weather-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    text-align: center;
+  }
+
+  .weather-card {
+    background: #f1f8e9;
+    border-radius: 15px;
+    padding: 20px;
+    transition: 0.3s;
+  }
+
+  .weather-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .weather-card h3 {
+    color: #1b5e20;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .temp {
+    font-size: 40px;
+    color: #2e7d32;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+  .forecast {
+    margin-top: 40px;
+  }
+
+  .forecast h3 {
+    color: #1b5e20;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+  }
+
+  .forecast-item {
+    background: #e8f5e9;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    transition: 0.3s;
+  }
+
+  .forecast-item:hover {
+    transform: translateY(-3px);
+    background-color: #dcedc8;
+  }
+
+  .forecast-item p {
+    margin: 5px 0;
+    color: #2e7d32;
+  }
+
+  .forecast-item strong {
+    color: #1b5e20;
+  }
+</style>
