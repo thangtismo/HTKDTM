@@ -95,3 +95,125 @@
         </div>
     {% endif %}
 {% endwith %}
+
+<!-- Danh sách mùa vụ -->
+<div class="mt-8 bg-white rounded-2xl shadow-md p-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h3 class="text-xl font-bold text-green-700 mb-3 sm:mb-0">📋 Danh sách mùa vụ</h3>
+        <div class="flex items-center gap-4">
+            <div class="text-sm text-gray-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                Tổng: <span class="font-semibold text-green-700">{{ seasons|length }}</span> mùa vụ
+            </div>
+        </div>
+    </div>
+    
+    {% if seasons %}
+    <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="min-w-full text-sm text-gray-700">
+            <thead class="bg-green-50 text-green-800">
+                <tr>
+                    <th class="p-4 text-left font-semibold border-b">Nông dân</th>
+                    <th class="p-4 text-left font-semibold border-b">Tỉnh</th>
+                    <th class="p-4 text-left font-semibold border-b">Cây trồng</th>
+                    <th class="p-4 text-left font-semibold border-b">Diện tích</th>
+                    <th class="p-4 text-left font-semibold border-b">Gieo trồng</th>
+                    <th class="p-4 text-left font-semibold border-b">Thu hoạch</th>
+                    <th class="p-4 text-left font-semibold border-b">Năng suất</th>
+                    <th class="p-4 text-left font-semibold border-b">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+        {% for s in seasons %}
+        <tr class="border-b hover:bg-green-50 transition duration-150 group">
+            <td class="p-4 font-medium text-gray-900">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                    {{ s.farmer_name or '-' }}
+                </div>
+            </td>
+            <td class="p-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                    {{ s.province or '-' }}
+                </span>
+            </td>
+            <td class="p-4">
+                <span class="font-medium text-green-700 bg-green-50 px-2 py-1 rounded">{{ s.crop or '-' }}</span>
+            </td>
+            <td class="p-4">
+                {% if s.area %}
+                    {% set area_value = s.area|float %}
+                    <span class="font-semibold text-gray-900">{{ "%.2f"|format(area_value) }}</span>
+                    <span class="text-xs text-gray-500">ha</span>
+                {% else %}
+                    <span class="text-gray-400">0.00 ha</span>
+                {% endif %}
+            </td>
+            <td class="p-4 text-sm text-gray-600">
+                {{ s.sow_date or '-' }}
+            </td>
+            <td class="p-4 text-sm text-gray-600">
+                {{ s.harvest_date or '-' }}
+            </td>
+            <td class="p-4">
+                {% if s.actual_yield %}
+                    <div class="flex flex-col">
+                        {% set yield_value = s.actual_yield|float %}
+                        <span class="font-semibold text-green-600">{{ "%.2f"|format(yield_value) }} tấn</span>
+                        <span class="text-xs text-gray-500">
+                            {% if s.area %}
+                                {% set area_value = s.area|float %}
+                                {{ "%.2f"|format(yield_value / area_value) }} tấn/ha
+                            {% else %}
+                                0.00 tấn/ha
+                            {% endif %}
+                        </span>
+                    </div>
+                {% else %}
+                    <span class="text-gray-400 text-sm bg-gray-50 px-2 py-1 rounded">Chưa có</span>
+                {% endif %}
+            </td>
+            <td class="p-4">
+                <div class="flex items-center gap-2">
+                    <!-- Sửa thông tin -->
+                    <a href="{{ url_for('edit_season', id=s.id) }}" 
+                       class="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm px-3 py-2 rounded-lg border border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition duration-200 group/edit"
+                       title="Chỉnh sửa thông tin">
+                        <span class="text-base">✏️</span>
+                        <span class="hidden sm:inline">Sửa</span>
+                    </a>
+
+                    <!-- Năng suất tự động -->
+                    <a href="{{ url_for('auto_yield', season_id=s.id) }}"
+                       class="inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-2 rounded-lg transition duration-200 shadow hover:shadow-lg transform hover:-translate-y-0.5 group/yield"
+                       title="Tính năng suất tự động">
+                        <span class="text-base">📊</span>
+                        <span class="hidden sm:inline">Năng suất</span>
+                    </a>
+
+                    <!-- Xóa -->
+                    <a href="{{ url_for('delete_season', id=s.id) }}" 
+                       class="inline-flex items-center gap-1 text-red-600 hover:text-red-800 text-sm px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50 hover:border-red-300 transition duration-200 group/delete"
+                       onclick="return confirm('Bạn có chắc muốn xóa mùa vụ {{ s.farmer_name }} - {{ s.crop }}?')"
+                       title="Xóa mùa vụ">
+                        <span class="text-base">🗑️</span>
+                        <span class="hidden sm:inline">Xóa</span>
+                    </a>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+        </table>
+    </div>
+    {% else %}
+    <!-- Empty state -->
+    <div class="text-center py-12">
+        <div class="flex flex-col items-center justify-center">
+            <span class="text-6xl mb-4">🌱</span>
+            <h3 class="text-xl font-medium text-gray-600 mb-2">Chưa có mùa vụ nào</h3>
+            <p class="text-gray-500 mb-6">Hãy thêm mùa vụ đầu tiên của bạn để bắt đầu!</p>
+            <div class="w-24 h-1 bg-gradient-to-r from-green-400 to-blue-400 rounded-full"></div>
+        </div>
+    </div>
+    {% endif %}
+</div>
