@@ -440,3 +440,182 @@ def index():
             total = len(df)
             recent = df.sort_values("created_at", ascending=False).head(5).to_dict(orient="records")
     return render_template("index.html", total=total, recent=recent)
+@app.route("/overview")
+@login_required
+def overview():
+    stats = {
+        "total_seasons": 0,
+        "total_area": 0,
+        "top_provinces": [],
+        "crop_distribution": {},
+        "top_provinces_by_crop": {},
+        "weather_stats": {}
+    }
+    
+    # ✅ XỬ LÝ DỮ LIỆU MÙA VỤ - TỐI ƯU HÓA
+    seasons_data = []
+    
+    if config.USE_FIREBASE and db is not None:
+        try:
+            # Lấy tất cả seasons
+            seasons_ref = db.collection("seasons")
+            docs = list(seasons_ref.stream())
+            stats["total_seasons"] = len(docs)
+            
+            for doc in docs:
+                data = doc.to_dict()
+                data["id"] = doc.id
+                seasons_data.append(data)
+                
+        except Exception as e:
+            print("Lỗi đọc thống kê Firestore:", e)
+    else:
+        # CSV fallback - tối ưu hóa
+        SEASONS_CSV_PATH = os.path.join(DATA_DIR, "seasons.csv")
+        if os.path.exists(SEASONS_CSV_PATH):
+            try:
+                df = pd.read_csv(SEASONS_CSV_PATH)
+                stats["total_seasons"] = len(df)
+                seasons_data = df.to_dict(orient="records")
+            except Exception as e:
+                print("Lỗi đọc file CSV mùa vụ:", e)
+    
+    # ✅ TỰ ĐỘNG TÍNH NĂNG SUẤT CHO CÁC MÙA VỤ CHƯA CÓ DỮ LIỆU
+    if seasons_data:
+        auto_calculated_count = 0
+        for season in seasons_data:
+            # Kiểm tra nếu chưa có actual_yield nhưng có đủ thông tin để tính toán
+            if (not season.get("actual_yield") and 
+                season.get("crop") and 
+                season.get("area") and 
+                float(season.get("area", 0)) > 0):
+                
+                predicted_yield = calculate_yield(season)
+                if predicted_yield is not None:
+                    try:
+                        if config.USE_FIREBASE and db is not None:
+                            doc_ref = db.collection("seasons").document(season["id"])
+                            doc_ref.update({
+                                "actual_yield": round(predicted_yield, 2),
+                                "yield_calculated_at": datetime.utcnow().isoformat(),
+                                "yield_source": "auto_overview"
+                            })
+                        else:
+                            # Cập nhật trong CSV
+                            SEASONS_CSV_PATH = os.path.join(DATA_DIR, "seasons.csv")
+                            if os.path.exists(SEASONS_CSV_PATH):
+                                df = pd.read_csv(SEASONS_CSV_PATH)
+                                # Tìm và cập nhật bản ghi
+                                for idx, row in df.iterrows():
+                                    if (str(row.get("farmer_name")) == str(season.get("farmer_name")) and 
+                                        str(row.get("crop")) == str(season.get("crop")) and 
+                                        str(row.get("province")) == str(season.get("province"))):
+                                        df.at[idx, "actual_yield"] = round(predicted_yield, 2)
+                                        df.at[idx, "yield_calculated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        df.at[idx, "yield_source"] = "auto_overview"
+                                        break
+                                df.to_csv(SEASONS_CSV_PATH, index=False, encoding="utf-8-sig")
+                        
+                        auto_calculated_count += 1
+                        print(f"✅ Đã tự động tính năng suất: {predicted_yield} tấn cho {season.get('crop')} tại {season.get('province')}")
+                        
+                    except Exception as e:
+                        print(f"❌ Lỗi khi lưu năng suất tự động: {e}")
+        
+        if auto_calculated_count > 0:
+            print(f"📊 Đã tự động tính năng suất cho {auto_calculated_count} mùa vụ")
+            # Load lại trang để hiển thị dữ liệu mới
+            flash(f"✅ Đã tự động tính năng suất cho {auto_calculated_count} mùa vụ", "success")
+            return redirect(url_for("overview"))
+    
+    # ✅ TÍNH TOÁN THỐNG KÊ TỪ DỮ LIỆU MÙA VỤ
+    if seasons_data:
+        area_by_province = {}
+        crop_stats = {}
+        crop_province_stats = {}
+        
+        for season in seasons_data:
+            # Xử lý diện tích
+            try:
+                area = float(season.get("area", 0))
+            except:
+                area = 0
+                
+            province = season.get("province", "Chưa xác định")
+            crop = season.get("crop", "Chưa xác định")
+            
+            # Chuẩn hóa tên cây trồng
+            crop_normalized = crop.strip().lower()
+            
+            # Tổng diện tích
+            stats["total_area"] += area
+            
+            # Thống kê theo tỉnh
+            if province in area_by_province:
+                area_by_province[province] += area
+            else:
+                area_by_province[province] = area
+            
+            # Thống kê theo cây trồng
+            if crop_normalized in crop_stats:
+                crop_stats[crop_normalized] += 1
+            else:
+                crop_stats[crop_normalized] = 1
+            
+            # Thống kê năng suất theo tỉnh và cây trồng
+            # Kiểm tra nếu có actual_yield
+            actual_yield = season.get("actual_yield")
+            if actual_yield and area > 0:
+                try:
+                    # Tính năng suất (tấn/ha)
+                    productivity = float(actual_yield) / area
+                    
+                    if crop_normalized not in crop_province_stats:
+                        crop_province_stats[crop_normalized] = []
+                    
+                    # Tìm xem tỉnh đã có trong danh sách chưa
+                    existing_province = None
+                    for item in crop_province_stats[crop_normalized]:
+                        if item["province"] == province:
+                            existing_province = item
+                            break
+                    
+                    if existing_province:
+                        # Cập nhật thông tin nếu đã tồn tại
+                        existing_province["total_area"] += area
+                        existing_province["total_yield"] += float(actual_yield)
+                        existing_province["productivity"] = existing_province["total_yield"] / existing_province["total_area"]
+                    else:
+                        # Thêm tỉnh mới
+                        crop_province_stats[crop_normalized].append({
+                            "province": province,
+                            "total_area": area,
+                            "total_yield": float(actual_yield),
+                            "productivity": productivity
+                        })
+                except (ValueError, TypeError, ZeroDivisionError) as e:
+                    print(f"Lỗi tính năng suất: {e}")
+                    continue
+        
+        # Sắp xếp và lấy top provinces theo diện tích
+        stats["top_provinces"] = sorted(area_by_province.items(), key=lambda x: x[1], reverse=True)[:5]
+        stats["crop_distribution"] = crop_stats
+        
+        # Xử lý top provinces by crop - chỉ lấy top 3 cho mỗi loại cây
+        stats["top_provinces_by_crop"] = {}
+        for crop, provinces in crop_province_stats.items():
+            if provinces:  # Chỉ xử lý nếu có dữ liệu
+                # Sắp xếp theo năng suất giảm dần và lấy top 3
+                sorted_provinces = sorted(provinces, key=lambda x: x["productivity"], reverse=True)[:3]
+                stats["top_provinces_by_crop"][crop] = sorted_provinces
+        
+        # DEBUG: In ra để kiểm tra
+        print(f"📊 Tổng số mùa vụ: {stats['total_seasons']}")
+        print(f"📊 Số loại cây trồng có năng suất: {len(crop_province_stats)}")
+        for crop, provinces in crop_province_stats.items():
+            print(f"🌱 {crop}: {len(provinces)} tỉnh có năng suất")
+    
+    # ✅ ĐỌC DỮ LIỆU THỜI TIẾT - TỐI ƯU HÓA
+    # ... (phần xử lý thời tiết giữ nguyên)
+    
+    return render_template("overview.html", stats=stats)
