@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto p-6">
+    <h2 class="text-2xl font-bold text-green-700 mb-6 flex items-center">
+        🌦️ Dữ liệu thời tiết (NASA)
+    </h2>
+
+    {% if weather and weather|length > 0 %}
+    <div class="overflow-x-auto rounded-lg shadow">
+        <table class="min-w-full border text-sm text-gray-700 bg-white">
+            <thead class="bg-green-100 text-green-800">
+                <tr>
+                    <th class="p-3 text-left">Năm</th>
+                    <th class="p-3 text-left">Nhiệt độ trung bình (°C)</th>
+                    <th class="p-3 text-left">Lượng mưa trung bình năm (mm)</th>
+                    <th class="p-3 text-left">Độ ẩm trung bình (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in weather %}
+                <tr class="border-t hover:bg-green-50 transition-colors duration-200">
+                    <td class="p-3">{{ w.Year }}</td>
+                    <td class="p-3">{{ "%.2f"|format(w.TempAvg|float) }}</td>
+                    <td class="p-3">{{ "%.2f"|format(w.RainfallAnnual|float) }}</td>
+                    <td class="p-3">{{ "%.2f"|format(w.HumidityAvg|float) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Biểu đồ thống kê -->
+    <div class="mt-10">
+        <h3 class="text-xl font-semibold text-green-700 mb-4">📊 Biểu đồ thống kê thời tiết từ năm 2000 </h3>
+        <canvas id="weatherChart" class="w-full max-w-4xl mx-auto"></canvas>
+    </div>
+
+    {% else %}
+    <div class="bg-yellow-100 text-yellow-800 p-4 rounded-md">
+        ⚠️ Không có dữ liệu thời tiết để hiển thị.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    const res = await fetch("/api/weather_chart_home");
+    const data = await res.json();
+
+    if (!data || data.error) return;
+
+    const ctx = document.getElementById("weatherChart").getContext("2d");
+    new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: data.years,
+            datasets: [
+                {
+                    label: "🌡️ Nhiệt độ trung bình (°C)",
+                    data: data.temp,
+                    borderColor: "rgb(255, 99, 132)",
+                    fill: false,
+                    tension: 0.2
+                },
+                {
+                    label: "🌧️ Lượng mưa (mm)",
+                    data: data.rain,
+                    borderColor: "rgb(54, 162, 235)",
+                    fill: false,
+                    tension: 0.2
+                },
+                {
+                    label: "💧 Độ ẩm (%)",
+                    data: data.humidity,
+                    borderColor: "rgb(75, 192, 192)",
+                    fill: false,
+                    tension: 0.2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    title: { display: true, text: "Năm" }
+                },
+                y: {
+                    title: { display: true, text: "Giá trị" }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: "bottom"
+                },
+                tooltip: {
+                    mode: "index",
+                    intersect: false
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
