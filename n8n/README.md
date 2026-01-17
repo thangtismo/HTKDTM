@@ -23,3 +23,8 @@ Sau khi n8n khởi động, nhấn phím `o` để mở giao diện web (thườ
     *   **Fetch NASA Data:** Gọi API NASA POWER để lấy dữ liệu thời tiết mới nhất.
     *   **Calculate Stats:** Tính toán trung bình nhiệt độ, lượng mưa, độ ẩm.
     *   **Save to CSV:** Lưu kết quả vào file `data/n8n_weather_update.csv`.
+## 3. Chạy thử nghiệm
+
+1.  Nhấn nút **Execute Workflow** (hình nút Play) ở phía dưới màn hình.
+2.  Quan sát các node chạy lần lượt (hiện màu xanh lá).
+3.  Sau khi hoàn tất, kiểm tra file `data/n8n_weather_update.csv` trong thư mục dự án. Bạn sẽ thấy dữ liệu thời tiết mới đã được cập nhật.
