@@ -29,3 +29,16 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Biểu đồ thống kê -->
+    <div class="mt-10">
+        <h3 class="text-xl font-semibold text-green-700 mb-4">📊 Biểu đồ thống kê thời tiết từ năm 2000 </h3>
+        <canvas id="weatherChart" class="w-full max-w-4xl mx-auto"></canvas>
+    </div>
+
+    {% else %}
+    <div class="bg-yellow-100 text-yellow-800 p-4 rounded-md">
+        ⚠️ Không có dữ liệu thời tiết để hiển thị.
+    </div>
+    {% endif %}
+</div>
