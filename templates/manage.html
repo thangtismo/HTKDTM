@@ -65,3 +65,33 @@
     </div>
 </form>
 </div>
+
+<!-- Hiển thị thông báo flash NGAY SAU FORM -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="mt-6 space-y-3" id="flash-messages">
+            {% for category, message in messages %}
+                <div class="p-4 rounded-lg border transition duration-200 transform hover:scale-[1.02] flash-message
+                    {% if category == 'success' %}bg-green-50 text-green-700 border-green-200 shadow-sm
+                    {% elif category == 'error' or category == 'danger' %}bg-red-50 text-red-700 border-red-200 shadow-sm
+                    {% elif category == 'warning' %}bg-yellow-50 text-yellow-700 border-yellow-200 shadow-sm
+                    {% else %}bg-blue-50 text-blue-700 border-blue-200 shadow-sm{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg">
+                                {% if category == 'success' %}✅
+                                {% elif category == 'error' or category == 'danger' %}❌
+                                {% elif category == 'warning' %}⚠️
+                                {% else %}ℹ️{% endif %}
+                            </span>
+                            <span class="font-medium">{{ message }}</span>
+                        </div>
+                        <button type="button" class="text-gray-500 hover:text-gray-700 close-flash" onclick="this.parentElement.parentElement.remove()">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
