@@ -172,3 +172,43 @@
     </div>
   </div>
 </div>
+
+<script>
+  async function getWeather() {
+    const city = document.getElementById("cityInput").value || "Hanoi";
+    const apiKey = "8e054550351ac98ddb1c99ddb6e5adcd";
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=vi&appid=${apiKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.cod !== "200") {
+      alert("Không tìm thấy thành phố!");
+      return;
+    }
+
+    const current = data.list[0];
+    document.getElementById("temperature").innerText = `${Math.round(current.main.temp)}°C`;
+    document.getElementById("description").innerText = current.weather[0].description;
+    document.getElementById("humidity").innerText = `${current.main.humidity}%`;
+    document.getElementById("wind").innerText = `${(current.wind.speed * 3.6).toFixed(1)} km/h`;
+
+    const forecastList = document.getElementById("forecastList");
+    forecastList.innerHTML = "";
+    for (let i = 0; i < data.list.length; i += 8) {
+      const day = data.list[i];
+      const date = new Date(day.dt_txt).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" });
+
+      forecastList.innerHTML += `
+        <div class="forecast-item">
+          <p><strong>${date}</strong></p>
+          <p>${Math.round(day.main.temp)}°C</p>
+          <p>${day.weather[0].main}</p>
+        </div>
+      `;
+    }
+  }
+
+  getWeather();
+</script>
+{% endblock %}
