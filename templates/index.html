@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="grid grid-cols-3 gap-6">
+    <!-- Tổng số mùa vụ -->
+    <div class="col-span-1 bg-green-800 text-white p-6 rounded-2xl shadow-md flex flex-col items-center justify-center">
+        <h2 class="text-lg font-semibold mb-2">Tổng số mùa vụ</h2>
+        <p class="text-5xl font-bold">{{ total }}</p>
+        <span class="text-sm">Mùa màu</span>
+    </div>
+
+    <!-- Mô tả dự án -->
+    <div class="col-span-2 bg-white p-6 rounded-2xl shadow-md">
+        <h2 class="text-lg font-semibold mb-2 text-green-700">Mô tả dự án</h2>
+        <p class="text-gray-700 leading-relaxed">
+            Website <span class="font-semibold text-green-700">AgroSmart</span> hỗ trợ nông dân quản lý mùa vụ,
+            dự báo năng suất dựa trên dữ liệu thời tiết từ <b>NASA POWER</b>, 
+            sản lượng từ <b>FAO</b> và mô hình <b>trí tuệ nhân tạo (AI)</b>.
+        </p>
+    </div>
+</div>
+
+<!-- Bảng mùa vụ -->
+<div class="mt-8 bg-white rounded-2xl shadow-md p-6">
+    <h3 class="text-lg font-semibold text-green-700 mb-4 flex items-center space-x-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+        </svg>
+        <span>5 mùa vụ gần nhất</span>
+    </h3>
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-sm text-gray-700 border">
+            <thead class="bg-green-100 text-green-800">
+                <tr>
+                    <th class="p-3 text-left">Nông dân</th>
+                    <th class="p-3 text-left">Tỉnh</th>
+                    <th class="p-3 text-left">Cây trồng</th>
+                    <th class="p-3 text-left">Diện tích (ha)</th>
+                    <th class="p-3 text-left">Ngày thu hoạch</th>
+                    <th class="p-3 text-left">Năng suất (tấn/ha)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in recent %}
+                <tr class="border-t hover:bg-green-50">
+                    <td class="p-3">{{ s.farmer_name or '-' }}</td>
+                    <td class="p-3">{{ s.province or '-' }}</td>
+                    <td class="p-3">{{ s.crop or '-' }}</td>
+                    <td class="p-3">{{ s.area or '-' }}</td>
+                    <td class="p-3">{{ s.harvest_date or '-' }}</td>
+                    <td class="p-3">{{ s.actual_yield or 'Chưa cập nhật' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Biểu đồ năng suất -->
+<div class="mt-8 bg-white rounded-2xl shadow-md p-6">
+    <h3 class="text-lg font-semibold text-green-700 mb-4">Biểu đồ năng suất (FAO)</h3>
+    <canvas id="yieldChart" height="100"></canvas>
+</div>
+
+<!-- Biểu đồ thời tiết trung bình -->
+<div class="mt-8 bg-white rounded-2xl shadow-md p-6">
+    <h3 class="text-lg font-semibold text-green-700 mb-4">Biểu đồ thời tiết trung bình (NASA)</h3>
+    <canvas id="weatherChart" height="100"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+async function loadYieldChart() {
+    const res = await fetch('/api/yield_chart');
+    const data = await res.json();
+    const ctx = document.getElementById('yieldChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.years,
+            datasets: [{
+                label: 'Năng suất (tấn/ha)',
+                data: data.yield,
+                borderColor: 'rgb(34,197,94)',
+                backgroundColor: 'rgba(34,197,94,0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+}
+
+async function loadWeatherChart() {
+    const res = await fetch('/api/weather_chart_home');
+    const data = await res.json();
+    const ctx = document.getElementById('weatherChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.years,
+            datasets: [
+                { label: 'Nhiệt độ (°C)', data: data.temp, backgroundColor: 'rgba(255,99,132,0.5)' },
+                { label: 'Lượng mưa (mm)', data: data.rain, backgroundColor: 'rgba(54,162,235,0.5)' },
+                { label: 'Độ ẩm (%)', data: data.humidity, backgroundColor: 'rgba(75,192,192,0.5)' }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+}
+
+loadYieldChart();
+loadWeatherChart();
+</script>
+{% endblock %}

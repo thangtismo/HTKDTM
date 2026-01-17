@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Dự báo thời tiết | AgroSmart{% endblock %}
+
+{% block content %}
+<style>
+  /* ================== WEATHER PAGE STYLE ================== */
+  body {
+    background-color: #f5f7fa;
+  }
+
+  .weather-container {
+    max-width: 950px;
+    margin: 50px auto;
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    font-family: "Inter", sans-serif;
+  }
+
+  .weather-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+  }
+
+  .weather-header h2 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2e7d32;
+    margin: 0;
+  }
+
+  .search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search-bar input {
+    padding: 10px 14px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    width: 220px;
+    font-size: 15px;
+    transition: all 0.3s;
+  }
+
+  .search-bar input:focus {
+    outline: none;
+    border-color: #2e7d32;
+    box-shadow: 0 0 5px rgba(46, 125, 50, 0.4);
+  }
+
+  .search-bar button {
+    background-color: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .search-bar button:hover {
+    background-color: #1b5e20;
+  }
+
+  .weather-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    text-align: center;
+  }
+
+  .weather-card {
+    background: #f1f8e9;
+    border-radius: 15px;
+    padding: 20px;
+    transition: 0.3s;
+  }
+
+  .weather-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .weather-card h3 {
+    color: #1b5e20;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .temp {
+    font-size: 40px;
+    color: #2e7d32;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+
+  .forecast {
+    margin-top: 40px;
+  }
+
+  .forecast h3 {
+    color: #1b5e20;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+  }
+
+  .forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+  }
+
+  .forecast-item {
+    background: #e8f5e9;
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    transition: 0.3s;
+  }
+
+  .forecast-item:hover {
+    transform: translateY(-3px);
+    background-color: #dcedc8;
+  }
+
+  .forecast-item p {
+    margin: 5px 0;
+    color: #2e7d32;
+  }
+
+  .forecast-item strong {
+    color: #1b5e20;
+  }
+</style>
+
+<div class="weather-container">
+  <div class="weather-header">
+    <h2>🌤️ Dự báo thời tiết</h2>
+    <div class="search-bar">
+      <input type="text" id="cityInput" placeholder="Nhập tên thành phố...">
+      <button onclick="getWeather()">Tìm kiếm</button>
+    </div>
+  </div>
+
+  <div id="weatherDisplay">
+    <div class="weather-info">
+      <div class="weather-card">
+        <h3>Nhiệt độ hiện tại</h3>
+        <div class="temp" id="temperature">-- °C</div>
+        <p id="description">--</p>
+      </div>
+
+      <div class="weather-card">
+        <h3>Thông tin chi tiết</h3>
+        <p>Độ ẩm: <span id="humidity">--%</span></p>
+        <p>Tốc độ gió: <span id="wind">-- km/h</span></p>
+      </div>
+    </div>
+
+    <div class="forecast">
+      <h3>📅 Dự báo 5 ngày tới</h3>
+      <div class="forecast-grid" id="forecastList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function getWeather() {
+    const city = document.getElementById("cityInput").value || "Hanoi";
+    const apiKey = "8e054550351ac98ddb1c99ddb6e5adcd";
+    const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&lang=vi&appid=${apiKey}`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.cod !== "200") {
+      alert("Không tìm thấy thành phố!");
+      return;
+    }
+
+    const current = data.list[0];
+    document.getElementById("temperature").innerText = `${Math.round(current.main.temp)}°C`;
+    document.getElementById("description").innerText = current.weather[0].description;
+    document.getElementById("humidity").innerText = `${current.main.humidity}%`;
+    document.getElementById("wind").innerText = `${(current.wind.speed * 3.6).toFixed(1)} km/h`;
+
+    const forecastList = document.getElementById("forecastList");
+    forecastList.innerHTML = "";
+    for (let i = 0; i < data.list.length; i += 8) {
+      const day = data.list[i];
+      const date = new Date(day.dt_txt).toLocaleDateString("vi-VN", { weekday: "short", day: "2-digit", month: "2-digit" });
+
+      forecastList.innerHTML += `
+        <div class="forecast-item">
+          <p><strong>${date}</strong></p>
+          <p>${Math.round(day.main.temp)}°C</p>
+          <p>${day.weather[0].main}</p>
+        </div>
+      `;
+    }
+  }
+
+  getWeather();
+</script>
+{% endblock %}

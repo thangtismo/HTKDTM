@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tính Năng Suất & Hỗ Trợ Quyết Định</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-green-600 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="{{ url_for('manage') }}" class="text-xl font-bold">🌾 AgriConnect</a>
+            <div class="space-x-4">
+                <a href="{{ url_for('manage') }}" class="hover:text-green-200">← Quản lý mùa vụ</a>
+                <a href="{{ url_for('logout') }}" class="hover:text-green-200">Đăng xuất</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-green-700 mb-2">📊 Tính Năng Suất & Hỗ Trợ Quyết Định</h1>
+                <p class="text-gray-600">Phân tích thông minh và khuyến nghị cho mùa vụ của bạn</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Cột trái: Thông tin mùa vụ & Dự đoán -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Thông tin mùa vụ -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">🌱 Thông tin mùa vụ</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="border rounded-lg p-3 bg-green-50">
+                                <label class="font-medium text-gray-700">Nông dân:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.farmer_name }}</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-blue-50">
+                                <label class="font-medium text-gray-700">Tỉnh:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.province }}</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-yellow-50">
+                                <label class="font-medium text-gray-700">Cây trồng:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.crop }}</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-purple-50">
+                                <label class="font-medium text-gray-700">Diện tích:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.area }} ha</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-orange-50">
+                                <label class="font-medium text-gray-700">Ngày gieo:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.sow_date }}</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-red-50">
+                                <label class="font-medium text-gray-700">Thu hoạch:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.harvest_date }}</p>
+                            </div>
+                            <div class="border rounded-lg p-3 bg-indigo-50 md:col-span-2">
+                                <label class="font-medium text-gray-700">Phân bón:</label>
+                                <p class="text-gray-900 font-semibold">{{ season.fertilizer or 'Chưa có thông tin' }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if predicted_yield is not none %}
+                    <!-- Kết quả dự đoán -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">📈 Kết quả dự đoán năng suất</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="text-center p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-lg shadow border">
+                                <p class="text-sm text-gray-600 mb-2">Năng suất dự đoán (tổng)</p>
+                                <p class="text-2xl font-bold text-green-600">{{ "%.2f"|format(predicted_yield) }} tấn</p>
+                            </div>
+                            <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow border">
+                                <p class="text-sm text-gray-600 mb-2">Năng suất trên hecta</p>
+                                <p class="text-2xl font-bold text-blue-600">{{ "%.2f"|format(predicted_yield / season.area) }} tấn/ha</p>
+                            </div>
+                            <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg shadow border">
+                                <p class="text-sm text-gray-600 mb-2">Phân loại năng suất</p>
+                                <p class="text-xl font-bold {{ decision_support.yield_color }} {{ decision_support.yield_bg }} px-3 py-1 rounded-full">
+                                    {{ decision_support.yield_category }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Form lưu năng suất -->
+                        <form method="POST">
+                            <div class="mb-4">
+                                <label class="block font-medium text-gray-700 mb-2">Năng suất thực tế (tấn):</label>
+                                <input type="number" step="0.01" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                       name="actual_yield" value="{{ "%.2f"|format(predicted_yield) }}" placeholder="Nhập năng suất thực tế" required>
+                                <p class="text-sm text-gray-500 mt-1">Bạn có thể điều chỉnh lại giá trị dự đoán nếu cần</p>
+                            </div>
+                            
+                            <div class="flex flex-col sm:flex-row gap-3">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200 flex items-center justify-center gap-2 flex-1">
+                                    <span>💾</span>
+                                    Lưu năng suất
+                                </button>
+                                <a href="{{ url_for('manage') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition duration-200 text-center flex items-center justify-center gap-2 flex-1">
+                                    <span>←</span>
+                                    Quay lại
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
+
+                    <!-- Biểu đồ & Phân tích -->
+                    {% if decision_support %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">📊 Phân tích tài chính</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                            <div class="text-center p-4 bg-green-50 rounded-lg border">
+                                <p class="text-sm text-gray-600 mb-2">Doanh thu ước tính</p>
+                                <p class="text-xl font-bold text-green-600">{{ decision_support.estimated_revenue }} đ</p>
+                                <p class="text-xs text-gray-500">{{ decision_support.price_per_kg }} đ/kg</p>
+                            </div>
+                            <div class="text-center p-4 bg-blue-50 rounded-lg border">
+                                <p class="text-sm text-gray-600 mb-2">Chi phí ước tính</p>
+                                <p class="text-xl font-bold text-blue-600">{{ decision_support.cost }} đ</p>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 rounded-lg border">
+                                <p class="text-sm text-gray-600 mb-2">Lợi nhuận dự kiến</p>
+                                <p class="text-xl font-bold text-purple-600">{{ decision_support.estimated_profit }} đ</p>
+                                <p class="text-xs text-gray-500">{{ decision_support.profit_margin }}% biên lợi nhuận</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Cột phải: Hỗ trợ quyết định -->
+                <div class="space-y-6">
+                    <!-- Khuyến nghị chăm sóc -->
+                    {% if decision_support %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">💡 Khuyến nghị chăm sóc</h2>
+                        
+                        <div class="space-y-3">
+                            {% for recommendation in decision_support.crop_recommendations %}
+                            <div class="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                                <span class="text-green-600 mt-0.5">✅</span>
+                                <p class="text-sm text-gray-700">{{ recommendation }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Cảnh báo -->
+                    {% if decision_support and decision_support.warnings %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-orange-700 mb-4">⚠️ Cảnh báo & Lưu ý</h2>
+                        
+                        <div class="space-y-3">
+                            {% for warning in decision_support.warnings %}
+                            <div class="flex items-start gap-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                <span class="text-orange-600 mt-0.5">⚠️</span>
+                                <p class="text-sm text-orange-700">{{ warning }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Tiến độ mùa vụ -->
+                    {% if decision_support %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-green-700 mb-4">📅 Tiến độ mùa vụ</h2>
+                        
+                        <div class="space-y-4">
+                            {% for stage in decision_support.growth_stages %}
+                            <div class="border rounded-lg p-3">
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-medium text-gray-700">{{ stage.stage }}</span>
+                                    <span class="text-sm font-semibold {{ 'text-green-600' if stage.progress > 50 else 'text-yellow-600' }}">
+                                        {{ stage.progress }}%
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: {{ stage.progress }}%"></div>
+                                </div>
+                                <div class="mt-2 text-xs text-gray-600">
+                                    {% for task in stage.tasks %}
+                                    <span class="inline-block bg-gray-100 px-2 py-1 rounded mr-1 mb-1">{{ task }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Khuyến nghị chung -->
+                    {% if decision_support %}
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold text-blue-700 mb-4">🎯 Khuyến nghị chung</h2>
+                        
+                        <div class="space-y-3">
+                            {% for recommendation in decision_support.general_recommendations %}
+                            <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <span class="text-blue-600 mt-0.5">💡</span>
+                                <p class="text-sm text-gray-700">{{ recommendation }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if predicted_yield is none %}
+            <!-- Không thể tính toán -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mt-6">
+                <div class="text-center">
+                    <span class="text-4xl mb-4">❌</span>
+                    <h3 class="text-xl font-semibold text-yellow-800 mb-2">Không thể tính toán năng suất tự động</h3>
+                    <p class="text-yellow-700 mb-4">Vui lòng kiểm tra lại thông tin mùa vụ hoặc nhập năng suất thủ công.</p>
+                    
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                        <a href="{{ url_for('update_season', season_id=season_id) }}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium transition duration-200 inline-flex items-center gap-2">
+                            <span>📝</span>
+                            Nhập năng suất thủ công
+                        </a>
+                        <a href="{{ url_for('manage') }}" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition duration-200 inline-flex items-center gap-2">
+                            <span>←</span>
+                            Quay lại quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // JavaScript cho biểu đồ và tương tác
+        document.addEventListener('DOMContentLoaded', function() {
+            // Có thể thêm biểu đồ Chart.js ở đây
+            console.log('Hệ thống hỗ trợ quyết định đã sẵn sàng!');
+        });
+    </script>
+</body>
+</html>
